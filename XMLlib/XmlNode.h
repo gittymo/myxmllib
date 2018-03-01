@@ -18,6 +18,7 @@ private:
 
 	// String length method - why?!?!!
 	int cstringLength(const char * c_string);
+	string * getTidyString(string * source_string);
 
 	// The three methods below are used to check suitability of characters in a node's name.
 	bool isValidNodeNameAZ(const char * c_string, int offset);			// Alphabetic characters

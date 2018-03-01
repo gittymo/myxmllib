@@ -47,6 +47,42 @@ void XmlNode::parseInnerText(string * innerText) {
 	this->value = new string(*innerText);
 }
 
+string * XmlNode::getTidyString(string * source_string) {
+	const int STR_LEN = source_string->length();
+	char * tidy_s_string = new char[STR_LEN + 1];
+	const char * string_data = source_string->data();
+	bool space_allowed = false;
+	char quote_char = 0;
+	int w = 0;
+	for (int i = 0; i < STR_LEN; i++) {
+		if (string_data[i] == '\'' || string_data[i] == '"') {
+			if (quote_char == 0) {
+				quote_char = string_data[i];
+			}
+			else {
+				if (string_data[i] == quote_char && string_data[i - 1] != '\\') {
+					quote_char = 0;
+				}
+				tidy_s_string[w++] = string_data[i];
+			}
+		}
+		if (quote_char > 0) tidy_s_string[w++] = string_data[i];
+		else {
+			if (string_data[i] != ' ' && string_data[i] != '\t' &&
+				string_data[i] != '<') {
+				space_allowed = true;
+				tidy_s_string[w++] = string_data[i];
+			}
+			else {
+				space_allowed = false;
+				tidy_s_string[w++] = string_data[i];
+			}
+		}
+	}
+
+	return new string(tidy_s_string, 0, w);
+}
+
 int XmlNode::parseInnerTextNode(string * node_string) {
 	return 0;
 }
