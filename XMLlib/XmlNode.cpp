@@ -59,7 +59,12 @@ string * XmlNode::getTidyString(string * source_string) {
 			if (spaces > 0) {
 				// Deal with spaces first
 				if (quoted > 0) for (int j = 0; j < spaces; j++) tidy_string[wp++] = ' ';
-				else tidy_string[wp++] = ' ';
+				else {
+					char left_of_spaces = untidy_string[i - (spaces + 1)];
+					if ((left_of_spaces >= 'A' && left_of_spaces <= 'Z') ||
+						(left_of_spaces >= 'a' && left_of_spaces <= 'z'))
+						tidy_string[wp++] = ' ';
+				}
 				spaces = 0;
 			}
 
