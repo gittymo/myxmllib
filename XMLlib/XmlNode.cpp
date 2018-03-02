@@ -49,38 +49,39 @@ void XmlNode::parseInnerText(string * innerText) {
 
 string * XmlNode::getTidyString(string * source_string) {
 	const int STR_LEN = source_string->length();
-	char * tidy_s_string = new char[STR_LEN + 1];
-	const char * string_data = source_string->data();
-	bool space_allowed = false;
-	char quote_char = 0;
-	int w = 0;
+	const char * untidy_string = source_string->data();
+	char quoted = 0;
+	bool escaped = false;
+	char * tidy_string = new char[STR_LEN];
+	int wp = 0, spaces = 0;
 	for (int i = 0; i < STR_LEN; i++) {
-		if (string_data[i] == '\'' || string_data[i] == '"') {
-			if (quote_char == 0) {
-				quote_char = string_data[i];
+		if (untidy_string[i] != ' ' && untidy_string[i] != '\t') {
+			if (spaces > 0) {
+				// Deal with spaces first
+				if (quoted > 0) for (int j = 0; j < spaces; j++) tidy_string[wp++] = ' ';
+				else tidy_string[wp++] = ' ';
+				spaces = 0;
 			}
-			else {
-				if (string_data[i] == quote_char && string_data[i - 1] != '\\') {
-					quote_char = 0;
+
+			// Now escape characters
+			if (untidy_string[i] == '\\') escaped = !escaped;
+			else escaped = false;
+			
+			// Now text within quotes
+			if (untidy_string[i] == '\'' || untidy_string[i] == '\"') {
+				if (!escaped) {
+					if (quoted == 0) quoted = untidy_string[i];
+					else quoted = 0;
 				}
-				tidy_s_string[w++] = string_data[i];
 			}
-		}
-		if (quote_char > 0) tidy_s_string[w++] = string_data[i];
-		else {
-			if (string_data[i] != ' ' && string_data[i] != '\t' &&
-				string_data[i] != '<') {
-				space_allowed = true;
-				tidy_s_string[w++] = string_data[i];
-			}
-			else {
-				space_allowed = false;
-				tidy_s_string[w++] = string_data[i];
-			}
-		}
+			
+			// Write character to tidy string.
+			tidy_string[wp++] = untidy_string[i];
+		} else spaces++;
 	}
 
-	return new string(tidy_s_string, 0, w);
+	tidy_string[wp] = 0;
+	return new string(tidy_string, 0, wp);
 }
 
 int XmlNode::parseInnerTextNode(string * node_string) {
