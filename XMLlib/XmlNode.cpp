@@ -15,6 +15,14 @@ XmlNode::XmlNode(string * name) {
 	this->innerTextNodes = new map<int, XmlNode *>();
 }
 
+XmlNode::XmlNode(string * name, string * innerText) {
+	this->setName(name);
+	this->parseInnerText(innerText);
+	this->child_nodes = new list<XmlNode *>();
+	this->attributes = new map<string *, string *>();
+	this->next_parse_code = 1;
+	this->innerTextNodes = new map<int, XmlNode *>();
+}
 void XmlNode::setName(string * new_name) {
 	if (this->name != NULL) delete this->name;
 	if (new_name == NULL || new_name->empty()) {
@@ -36,15 +44,70 @@ void XmlNode::parseInnerText(string * innerText) {
 		if (ob != string::npos) {
 			cb = innerText->find('>', ob);
 			if (cb != string::npos) {
-				int place_holder = this->parseInnerTextNode(&innerText->substr(ob, cb));
+				int place_holder =
+					this->parseInnerTextNode(XmlNode::getTidyString(&innerText->substr(ob, cb)));
 			}
-			string * old_innerText = innerText;
-			innerText =
-				new string(innerText->substr(0, ob - 1) + innerText->substr(cb + 1));
-			delete old_innerText;
+			if (cb < innerText->length() - 1) {
+				string * old_innerText = innerText;
+				innerText = new string(innerText->substr(0, ob - 1) + innerText->substr(cb + 1));
+				cout << ob << ", " << cb << " = " << *innerText << endl;
+				delete old_innerText;
+			}
+			else ob = string::npos;
 		}
 	} while (ob != string::npos && cb != string::npos);
 	this->value = new string(*innerText);
+}
+
+int XmlNode::parseInnerTextNode(string * node_string) {
+	// Get the c string data for the string.
+	const char * c_string = node_string->data();
+	/* Get name of node by taking the substring of the characters between < and the
+		first whitespace character. */
+	int s;
+	for (s = 0; c_string[s] != ' '; s++);
+	XmlNode * new_node = new XmlNode(new string(c_string + 1, s));
+	// Everything else will be attributes up to the closing >
+	// Get the length of the node string
+	const int STR_LEN = node_string->length();
+	for (s; s < STR_LEN; s++) {
+		// Find everything up to = (if it exists!)
+		int e,v;
+		for (e = s; c_string[e] != '=' && e < STR_LEN; e++);
+		if (c_string[e] == '=') {
+			// We've got an attribute name, let's get it's value.
+			v = e + 1; // Ignore opening quote.
+			while (!((c_string[v] == '\"' || c_string[v] == '\'') && c_string[v - 1] != '\\') && v < STR_LEN) {
+				v++;
+			}
+			// Okay, we've got offsets to find the name and value, so let's add them to
+			//	the node.
+			new_node->addAttribute(new string(c_string + s, e - s - 1),
+				new string(c_string + e + 1, v - e - 1));
+			e = v + 1;
+		}
+		s = e;
+	} 
+
+	return 0;
+}
+
+void XmlNode::addAttribute(string * name, string * value) {
+	this->attributes->insert(std::pair<string*, string*>(name, value));
+}
+
+map<string*, string *> * XmlNode::getAttributes() {
+	return this->attributes;
+}
+
+// ----------------------------------------------- PUBLIC STATIC METHOD DEFINITIONS ---------------------------------------------------- //
+
+inline int XmlNode::cstringLength(const char * c_string) {
+	int len = 0;
+	if (c_string != NULL) {
+		for (; c_string[len] != 0; len++);
+	}
+	return len;
 }
 
 string * XmlNode::getTidyString(string * source_string) {
@@ -71,7 +134,7 @@ string * XmlNode::getTidyString(string * source_string) {
 			// Now escape characters
 			if (untidy_string[i] == '\\') escaped = !escaped;
 			else escaped = false;
-			
+
 			// Now text within quotes
 			if (untidy_string[i] == '\'' || untidy_string[i] == '\"') {
 				if (!escaped) {
@@ -79,27 +142,18 @@ string * XmlNode::getTidyString(string * source_string) {
 					else quoted = 0;
 				}
 			}
-			
+
 			// Write character to tidy string.
 			tidy_string[wp++] = untidy_string[i];
-		} else spaces++;
+		}
+		else spaces++;
 	}
 
 	tidy_string[wp] = 0;
-	return new string(tidy_string, 0, wp);
+	return new string(tidy_string, wp);
 }
 
-int XmlNode::parseInnerTextNode(string * node_string) {
-	return 0;
-}
-
-inline int XmlNode::cstringLength(const char * c_string) {
-	int len = 0;
-	if (c_string != NULL) {
-		for (; c_string[len] != 0; len++);
-	}
-	return len;
-}
+// ----------------------------------------------- PRIVATE STATIC METHOD DEFINITIONS --------------------------------------------------- //
 
 bool XmlNode::isValidNodeNameAZ(const char* c_string, int offset) {
 	// Get c_string length
