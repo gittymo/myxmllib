@@ -100,6 +100,16 @@ map<string*, string *> * XmlNode::getAttributes() {
 	return this->attributes;
 }
 
+void XmlNode::addChildNode(XmlNode * child_node) {
+	if (child_node != NULL) {
+		list<XmlNode *>::iterator it = child_nodes.begin();
+		this->child_nodes->insert(it, child_node);
+	}
+}
+
+list <XmlNode *> * XmlNode::getChildNodes() {
+	return this->child_nodes;
+}
 // ----------------------------------------------- PUBLIC STATIC METHOD DEFINITIONS ---------------------------------------------------- //
 
 inline int XmlNode::cstringLength(const char * c_string) {

@@ -40,6 +40,10 @@ public:
 	void addAttribute(string * name, string * value);
 	//	Get map of attributes
 	map<string*, string *> * getAttributes();
+	//	Add child node to node
+	void addChildNode(XmlNode * child_node);
+	//	Get list of child nodes
+	list<XmlNode *> * getChildNodes();
 
 	//void setInnerText(string * inner_text);				/*	Sets the innerText of a node, will also parse embedded
 	//														nodes and add them as child nodes to this node.*/
